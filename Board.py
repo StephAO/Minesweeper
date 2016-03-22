@@ -3,6 +3,9 @@ import random
 
 MINE_RATIO = 0.20
 MINE = "*"
+UNKNOWN = 0
+KNOWN = 1
+MARKED = 2
 
 class Board:
 
@@ -32,7 +35,7 @@ class Board:
             self.known.append([])
             for col in range(M):
                 self.board[row].append(0)
-                self.known[row].append(False)
+                self.known[row].append(UNKNOWN)
 
         for mine in self.mines:
             i = mine[0]
@@ -61,13 +64,17 @@ class Board:
                 i += 1
         return added
 
-    def select(self,i,j):
+    def select(self,i,j,flag):
         ''' Returns a list of uncovered tiles'''
-        if self.known[i][j]:
+        if flag:
+            print("MARKED")
+            self.known[i][j] = MARKED
+            return True
+        if self.known[i][j] == KNOWN:
             print("ALREADY KNOWN")
             return True
         if self.board[i][j] == MINE:
-            self.known[i][j] = True
+            self.known[i][j] = KNOWN
             print("GAME OVER")
             return False
         self.uncover_recurse(i,j)
@@ -85,8 +92,8 @@ class Board:
                 [ ][ ][ ][ ][ ]     [ ][ ][ ][ ][ ]
         '''
 
-        recurse = self.board[i][j] == 0 and not self.known[i][j]
-        self.known[i][j] = True
+        recurse = self.board[i][j] == 0 and not self.known[i][j] == KNOWN
+        self.known[i][j] = KNOWN
         if recurse:
             for _i,_j in get_adjacent(i,j):
                 if in_bounds(_i,_j,self.N,self.M):
@@ -97,7 +104,7 @@ class Board:
         solved = True
         for i in range(self.N):
             for j in range(self.M):
-                if self.known[i][j]:
+                if self.known[i][j] == KNOWN:
                     if self.board[i][j] == MINE:
                         solved = False
                 else:
@@ -113,7 +120,13 @@ class Board:
         string = ""
         for i in range(self.N):
             for j in range(self.M):
-                string += " "+str(self.board[i][j])+" " #if self.known[i][j] else "[ ]"
+                if self.known[i][j] == UNKNOWN:
+                    string += "[ ]"
+                if self.known[i][j] == KNOWN:
+                    string += (" "+str(self.board[i][j])+" ")
+                if self.known[i][j] == MARKED:
+                    string += ("[X]")
+##                string += " "+str(self.board[i][j])+" " #if self.known[i][j] else "[ ]"
             string += "\n"
         return string
 
