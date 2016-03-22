@@ -1,3 +1,4 @@
+from Tile import *
 import math
 import random
 
@@ -14,8 +15,7 @@ class Board:
             A Board is composed of:
                 NxM : dimensions
                 mines : locations of mines
-                board : 2D array representing the tiles (domain: {1,2,3,4,5,6,7,8,'*'})
-                known : 2D boolean array representing which tiles are known to player
+                board : 2D array of tiles (domain: {1,2,3,4,5,6,7,8,'*'})
         '''
 
         self.N = N
@@ -30,26 +30,22 @@ class Board:
 
         # value of the board
         self.board = []
-        # boolean array of know tiles
-        self.known = []
         for row in range(N):
             self.board.append([])
-            self.known.append([])
             for col in range(M):
-                self.board[row].append(0)
-                self.known[row].append(UNKNOWN)
+                self.board[row].append(Tile())
 
         for mine in self.mines:
             i = mine[0]
             j = mine[1]
             # set mine
-            self.board[i][j] = MINE
+            self.board[i][j].set_mine()
             # adjust numbers adjacent
             for _i,_j in get_adjacent(i,j):
-                if in_bounds(_i,_j,self.N,self.M) and self.board[_i][_j] != MINE:
-                    self.board[_i][_j] += 1
+                if in_bounds(_i,_j,self.N,self.M) and not self.board[_i][_j].is_mine:
+                    self.board[_i][_j].increment()
 
-        print(self.board)
+##        print(self.board)
 
 
     def randomize_mines(self,N,M):
@@ -66,30 +62,34 @@ class Board:
                 i += 1
         return added
 
-    def select(self,i,j,prob = None):
+    def select(self,i,j,flag):
         ''' Returns a list of uncovered tiles'''
         # checking a tile that is already known
-        if self.known[i][j] == KNOWN:
+        tile = self.board[i][j]
+        if tile.known:
             print("ALREADY KNOWN")
             return -1
 
-        self.unknown_tiles -= 1
-        p = 2 if self.known[i][j] == -1 else self.known[i][j]
+        p = tile.minep
         # marking down probabilities of tile being a mine
-        if prob is not None:
+        if flag:
+            self.unknown_tiles -= 1
             print("MARKED")
-            self.known[i][j] = prob if prob < 1 else MARKED
+            tile.marked = True
             self.known_mines += 1
             return -1
-        # opened a mine
 
-        if self.board[i][j] == MINE:
+        # selected a mine
+        if tile.is_mine:
+            self.unknown_tiles -= 1
+            tile.known = True
             self.known_mines += 1
-            self.known[i][j] = KNOWN
-            print("GAME OVER")
-            return p
+##            print("GAME OVER")
+            return tile.minep
+
+        # if selected is a valid non-mine tile
         self.uncover_recurse(i,j)
-        return p
+        return tile.minep
 
     def uncover_recurse(self,i,j):
         ''' Recursively uncover tiles that have no surrounding mines
@@ -103,8 +103,11 @@ class Board:
                 [ ][ ][ ][ ][ ]     [ ][ ][ ][ ][ ]
         '''
 
-        recurse = self.board[i][j] == 0 and not self.known[i][j] == KNOWN
-        self.known[i][j] = KNOWN
+        tile = self.board[i][j]
+        recurse = tile.value == 0 and not tile.known
+        if not tile.known:
+            self.unknown_tiles -= 1
+        tile.known = True
         if recurse:
             for _i,_j in get_adjacent(i,j):
                 if in_bounds(_i,_j,self.N,self.M):
@@ -112,17 +115,14 @@ class Board:
 
     def solved(self):
         ''' Checks to see if all known non-mine tiles are known '''
-        solved = True
+        return self.unknown_tiles == 0
+
+    def check_sol(self):
         for i in range(self.N):
             for j in range(self.M):
-                if self.known[i][j] == KNOWN:
-                    if self.board[i][j] == MINE:
-                        solved = False
-                else:
-                    if not self.board[i][j] == MINE:
-                        solved = False
-        return solved
-
+                if not self.board[i][j].is_mine and not self.board[i][j].known:
+                    return False
+        return True
 
     def __repr__(self):
         return "Board"
@@ -131,15 +131,13 @@ class Board:
         string = ""
         for i in range(self.N):
             for j in range(self.M):
-                if self.known[i][j] == UNKNOWN:
-                    string += "[ ]"
-                elif self.known[i][j] == KNOWN:
-                    string += (" "+str(self.board[i][j])+" ")
-                elif self.known[i][j] == MARKED:
+                tile = self.board[i][j]
+                if tile.known:
+                    string += " * " if tile.is_mine else (" "+str(tile.value)+" ")
+                elif tile.marked:
                     string += ("[X]")
                 else:
-                    string += "[p]"
-##                string += " "+str(self.board[i][j])+" " #if self.known[i][j] else "[ ]"
+                    string += "[ ]"
             string += "\n"
         return string
 
