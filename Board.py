@@ -1,6 +1,7 @@
 import math
+import random
 
-MINE_RATIO = 0.15
+MINE_RATIO = 0.20
 MINE = "*"
 
 class Board:
@@ -18,7 +19,7 @@ class Board:
         self.M = M
         if mines is None:
             number_mines = int(math.floor(N*M*MINE_RATIO))
-            self.mines = randomize_mines(N,M,number_mines)
+            self.mines = self.randomize_mines(N,M,number_mines)
         else:
             self.mines = mines
 
@@ -33,7 +34,7 @@ class Board:
                 self.board[row].append(0)
                 self.known[row].append(False)
 
-        for mine in mines:
+        for mine in self.mines:
             i = mine[0]
             j = mine[1]
             # set mine
@@ -46,9 +47,19 @@ class Board:
         print(self.board)
 
 
-    def randomize_mines(N,M,number_mines):
-        # TODO
-        pass
+    def randomize_mines(self,N,M,number_mines):
+        ''' Generate random board '''
+        row_index = 0
+        col_index = 0
+        i = 0
+        added = []
+        while i < number_mines:
+            row_index = (row_index+random.randint(0,N))%N
+            col_index = (col_index+random.randint(0,M))%M
+            if (row_index,col_index) not in added:
+                added.append((row_index,col_index))
+                i += 1
+        return added
 
     def select(self,i,j):
         ''' Returns a list of uncovered tiles'''
@@ -102,7 +113,7 @@ class Board:
         string = ""
         for i in range(self.N):
             for j in range(self.M):
-                string += " "+str(self.board[i][j])+" " if self.known[i][j] else "[ ]"
+                string += " "+str(self.board[i][j])+" " #if self.known[i][j] else "[ ]"
             string += "\n"
         return string
 
