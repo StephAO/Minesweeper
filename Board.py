@@ -10,7 +10,7 @@ MARKED = 1
 
 class Board:
 
-    def __init__(self, N, M, mines = None):
+    def __init__(self, N, M, number_mines = None, mines = None):
         ''' Initialize a Board.
             A Board is composed of:
                 NxM : dimensions
@@ -22,8 +22,12 @@ class Board:
         self.M = M
         self.known_mines = 0
         self.unknown_tiles = M*N
+        self.mines_hit = 0
         if mines is None:
-            self.number_mines = int(math.floor(N*M*MINE_RATIO))
+            if number_mines is None:
+                self.number_mines = int(math.floor(N*M*MINE_RATIO))
+            else:
+                self.number_mines = number_mines
             self.mines = self.randomize_mines()
         else:
             self.mines = mines
@@ -84,7 +88,8 @@ class Board:
             self.unknown_tiles -= 1
             tile.known = True
             self.known_mines += 1
-            return []
+            self.mines_hit += 1
+            return [tile]
 ##            print("GAME OVER")
 
         # if selected is a valid non-mine tile
@@ -117,18 +122,17 @@ class Board:
 
     def check_constraint(self,tile):
         if not tile.known:
-            print("TILE NOT KNOWN")
+##            print("TILE NOT KNOWN")
             return [], [], []
         if tile.is_mine:
-            print("TILE IS MINE")
+##            print("TILE IS MINE")
             return [], [], []
         mines_remaining = tile.value
         number_unknown = 0
         for adj_tile in self.get_adjacent(tile):
-            mines_remaining -= 1 if adj_tile.known and \
-                (adj_tile.is_mine or adj_tile.marked) else 0
+            mines_remaining -= 1 if (adj_tile.known and adj_tile.is_mine) or adj_tile.marked else 0
 ##            print(adj_tile.known)
-            number_unknown += 0 if adj_tile.known else 1
+            number_unknown += 0 if adj_tile.known or adj_tile.marked else 1
 
         if number_unknown == 0:
 ##            print("All adjacent tiles known")
@@ -136,15 +140,17 @@ class Board:
 
         safe = (mines_remaining == 0)
         unsafe = (mines_remaining == number_unknown)
+        minep = mines_remaining/number_unknown
 
         safe_tiles = []
         unsafe_tiles = []
         prob_tiles = []
 
         for adj_tile in self.get_adjacent(tile):
-            if not adj_tile.known:
-                adj_tile.set_probability(mines_remaining/number_unknown)
-                prob_tiles.append(adj_tile)
+            if not adj_tile.known and not adj_tile.marked:
+                if minep < adj_tile.minep:
+                    adj_tile.set_probability(minep)
+                    prob_tiles.append(adj_tile)
                 if safe:
                     safe_tiles.append(adj_tile)
                 elif unsafe:
@@ -154,12 +160,14 @@ class Board:
 
     def mark(self, tile):
         if tile.marked:
-            self.unknown_tiles += 1
-            self.known_mines -= 1
+            pass
+##            self.unknown_tiles += 1
+##            self.known_mines -= 1
         else:
             self.unknown_tiles -= 1
             self.known_mines += 1
-        tile.marked = not tile.marked
+        tile.marked = True
+        tile.set_probability(1)
 
     def solved(self):
         ''' Checks to see if all known non-mine tiles are known '''
