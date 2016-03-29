@@ -1,4 +1,5 @@
 import Board
+import Tile
 
 def add(a):
     a.append(5)
@@ -17,17 +18,20 @@ def main():
                 break
         if q:
             break
-
+        print(loc)
         loc = loc.split(',')
         mark = None if len(loc) == 2 else True
-        pmine = b.select(int(loc[0]), int(loc[1]), mark)
+        # the function to update pmine has not been added yet
+        uncovered_tiles = b.select(int(loc[0]), int(loc[1]), mark)
         print(b)
-        print(b.unknown_tiles)
-##        if pmine > 0:
-##            if pmine == 2:
-##                pmine = (1-b.number_mines+b.known_mines)/(b.unknown_tiles+1)
-##            probability_of_success *= pmine
-##            print("SUCCCES PROBABILITY DROPPED TO: ",probability_of_success)
+        safe_mines = []
+
+        b.check_constraint(b.board[int(loc[0])][int(loc[1])])
+        if safe_mines is not None:
+            for sf in safe_mines:
+                print("SAFE: ",sf)
+
+
     else:
         print("CONGRATULATIONS")
 
