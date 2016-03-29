@@ -6,7 +6,7 @@ class Tile:
         self.known = False
         self.is_mine = False
         self.marked = False
-        self.minep = -1
+        self.minep = 2
         self.value = 0
 
     def increment(self):
@@ -19,4 +19,7 @@ class Tile:
         self.minep = minep
 
     def __str__(self):
+        return ("("+str(self.i)+","+str(self.j)+")")
+
+    def __repr__(self):
         return ("("+str(self.i)+","+str(self.j)+")")

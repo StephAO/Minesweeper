@@ -1,12 +1,73 @@
 import Board
 import Tile
+import sys
 
 def add(a):
     a.append(5)
 
 def main():
+    human = False
+    if len(sys.argv) == 1 and sys.argv[0] == "human":
+        human = True
     b = Board.Board(6,6) # [(1,1),(2,2),(3,4),(2,4)]
     probability_of_success = 1
+
+    if human:
+        human_player(b)
+    else:
+        FC(b)
+
+
+def FC(b):
+    probability_of_success = 1
+    safe_tiles = set()
+    known_probabilities = set()
+    unknown_probabilities = set(b.get_all_tiles())
+    while not b.solved():
+
+        tile = None
+##        print("SAFE TILES", safe_tiles)
+        if len(safe_tiles) > 0:
+            # if there's a safe tile, select that one next
+            tile = safe_tiles.pop()
+            if tile.known:
+                continue
+        else:
+            # otherwise pick the tile with the lowest probability
+            base_probability = (1-(b.number_mines-b.known_mines)/b.unknown_tiles)
+            kp = sorted(known_probabilities, key = lambda tile: tile.minep)
+            if len(kp) > 0 and (kp[0].minep < base_probability or len(unknown_probabilities)==0):
+                tile = kp[0]
+                known_probabilities.remove(tile)
+                if tile.known:
+                    continue
+                probability_of_success *= tile.minep
+            else:
+                tile = unknown_probabilities.pop()
+                if tile.known:
+                    continue
+                probability_of_success *= base_probability
+
+        uncovered_tiles = b.select(tile)
+        unsafe_tiles = set()
+
+        for uncovered_tile in uncovered_tiles:
+            safe, unsafe, knownp = b.check_constraint(uncovered_tile)
+    ##            print(uncovered_tile, "SAFE: ", safe, " --> UNSAFE: ", unsafe)
+            safe_tiles.update(safe)
+            unsafe_tiles.update(unsafe)
+            known_probabilities.update(knownp)
+            unknown_probabilities.difference_update(knownp)
+
+        for unsafe_tile in unsafe_tiles:
+            b.mark(unsafe_tile)
+
+        input("hit enter for next move, ps = " + str(probability_of_success))
+
+        print(b)
+
+
+def human_player(b):
     while not b.solved():
         loc = []
         q = False
@@ -20,20 +81,24 @@ def main():
             break
         print(loc)
         loc = loc.split(',')
-        mark = None if len(loc) == 2 else True
+        tile = b.get_tile(int(loc[0]), int(loc[1]))
+        if len(loc) > 2:
+            b.mark(tile)
         # the function to update pmine has not been added yet
-        uncovered_tiles = b.select(int(loc[0]), int(loc[1]), mark)
+        uncovered_tiles = b.select(tile)
+        safe_tiles = set()
+        unsafe_tiles = set()
+
+        for uncovered_tile in uncovered_tiles:
+            safe, unsafe = b.check_constraint(uncovered_tile)
+    ##            print(uncovered_tile, "SAFE: ", safe, " --> UNSAFE: ", unsafe)
+            safe_tiles.update(safe)
+            unsafe_tiles.update(unsafe)
+
+        for unsafe_tile in unsafe_tiles:
+            b.mark(unsafe_tile)
+
         print(b)
-        safe_mines = []
-
-        b.check_constraint(b.board[int(loc[0])][int(loc[1])])
-        if safe_mines is not None:
-            for sf in safe_mines:
-                print("SAFE: ",sf)
-
-
-    else:
-        print("CONGRATULATIONS")
 
 
 if __name__ == '__main__':

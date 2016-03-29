@@ -59,32 +59,38 @@ class Board:
                 i += 1
         return added
 
-    def select(self,i,j,flag):
+    def get_tile(self,i,j):
+        if not self.in_bounds(i,j):
+            print("INVALID TILE")
+            return None
+        return self.board[i][j]
+
+    def get_all_tiles(self):
+        tiles = []
+        for i in range(self.N):
+            for j in range(self.M):
+                tiles.append(self.board[i][j])
+        return tiles
+
+    def select(self,tile):
         ''' Returns a list of uncovered tiles'''
         # checking a tile that is already known
-        tile = self.board[i][j]
         if tile.known:
             print("ALREADY KNOWN")
-            return -1
-
-        # marking down probabilities of tile being a mine
-        if flag:
-            self.unknown_tiles -= 1
-            print("MARKED")
-            tile.marked = True
-            self.known_mines += 1
-            return -1
+            return []
 
         # selected a mine
         if tile.is_mine:
             self.unknown_tiles -= 1
             tile.known = True
             self.known_mines += 1
+            return []
 ##            print("GAME OVER")
 
         # if selected is a valid non-mine tile
-        return self.uncover_recurse(tile)
-
+        uncovered_tiles = self.uncover_recurse(tile)
+##        print(uncovered_tiles)
+        return uncovered_tiles
 
     def uncover_recurse(self,tile):
         ''' Recursively uncover tiles that have no surrounding mines
@@ -99,25 +105,23 @@ class Board:
 
             returns a list of uncovered tiles
         '''
-        uncovered_tiles = []
-        recurse = tile.value == 0 and not tile.known
-        if not tile.known:
-            self.unknown_tiles -= 1
+        if tile.known:
+            return []
+        uncovered_tiles = [tile]
+        self.unknown_tiles -= 1
         tile.known = True
-        if recurse:
-            uncovered_tiles.append(tile)
+        if tile.value == 0:
             for adj_tile in self.get_adjacent(tile):
                     uncovered_tiles.extend(self.uncover_recurse(adj_tile))
         return uncovered_tiles
 
-
     def check_constraint(self,tile):
         if not tile.known:
-            print("Tile not known")
-            return None
+            print("TILE NOT KNOWN")
+            return [], [], []
         if tile.is_mine:
-            print("Tile is a mine")
-            return None
+            print("TILE IS MINE")
+            return [], [], []
         mines_remaining = tile.value
         number_unknown = 0
         for adj_tile in self.get_adjacent(tile):
@@ -127,22 +131,35 @@ class Board:
             number_unknown += 0 if adj_tile.known else 1
 
         if number_unknown == 0:
-            print("All adjacent tiles known")
-            return None
+##            print("All adjacent tiles known")
+            return [], [], []
 
         safe = (mines_remaining == 0)
+        unsafe = (mines_remaining == number_unknown)
 
         safe_tiles = []
+        unsafe_tiles = []
+        prob_tiles = []
 
         for adj_tile in self.get_adjacent(tile):
             if not adj_tile.known:
                 adj_tile.set_probability(mines_remaining/number_unknown)
-##                print(tile, " probability = ", mines_remaining/number_unknown)
-                adj_tile.is_mine = safe
+                prob_tiles.append(adj_tile)
                 if safe:
                     safe_tiles.append(adj_tile)
+                elif unsafe:
+                    unsafe_tiles.append(adj_tile)
 
-        return safe_tiles
+        return safe_tiles, unsafe_tiles, prob_tiles
+
+    def mark(self, tile):
+        if tile.marked:
+            self.unknown_tiles += 1
+            self.known_mines -= 1
+        else:
+            self.unknown_tiles -= 1
+            self.known_mines += 1
+        tile.marked = not tile.marked
 
     def solved(self):
         ''' Checks to see if all known non-mine tiles are known '''
