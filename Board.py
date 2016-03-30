@@ -64,12 +64,14 @@ class Board:
         return added
 
     def get_tile(self,i,j):
+        ''' return the tile object with the given coordinates'''
         if not self.in_bounds(i,j):
             print("INVALID TILE")
             return None
         return self.board[i][j]
 
     def get_all_tiles(self):
+        ''' return a list of all the tiles in the board'''
         tiles = []
         for i in range(self.N):
             for j in range(self.M):
@@ -77,7 +79,9 @@ class Board:
         return tiles
 
     def select(self,tile):
-        ''' Returns a list of uncovered tiles'''
+        ''' Select this tile revealing it's value (or mine if it is a mine)
+            Changes tile knowledge to true
+            Returns a list of uncovered tiles'''
         # checking a tile that is already known
         if tile.known:
             print("ALREADY KNOWN")
@@ -121,6 +125,14 @@ class Board:
         return uncovered_tiles
 
     def check_constraint(self,tile):
+        '''
+            Checks tile to see if see any information can be gained.
+            Checks the value of the tile and compares it to the tile around it.
+            If number of known mines in the adjacent tiles is equal to the value the tile is deemed safe
+            If the number of unknown tiles is equal to the value, the tile is deemed unsafe
+            Sets the probability of all unknown adjacent mines to number of mines remaining/number of unknown tiles
+            Returns the safe tiles, the unsafe tiles, and the tiles who's probability has been set
+        '''
         if not tile.known:
 ##            print("TILE NOT KNOWN")
             return [], [], []
@@ -159,6 +171,7 @@ class Board:
         return safe_tiles, unsafe_tiles, prob_tiles
 
     def mark(self, tile):
+        ''' Mark a tile as unsafe (i.e. we think it is a mine)'''
         if tile.marked:
             pass
 ##            self.unknown_tiles += 1
@@ -170,10 +183,11 @@ class Board:
         tile.set_probability(1)
 
     def solved(self):
-        ''' Checks to see if all known non-mine tiles are known '''
+        ''' Checks to see if all unknown tiles are mines '''
         return self.unknown_tiles == 0
 
     def check_sol(self):
+        ''' checks to see if we are right '''
         for i in range(self.N):
             for j in range(self.M):
                 if not self.board[i][j].is_mine and not self.board[i][j].known:
@@ -199,13 +213,12 @@ class Board:
 
 
     def in_bounds(self,i,j):
+        ''' Checks to see if a tile is within the board '''
         return i >= 0 and i < self.N \
             and j >= 0 and j < self.M
 
     def get_adjacent(self,tile):
-            ''' Returns a list of adjacent tiles.
-                Tiles are represented a tuple: (row,col)
-            '''
+            ''' Returns a list of adjacent tiles. '''
             i = tile.i
             j = tile.j
             adj = [(i+1,j+1),(i+1,j),(i+1,j-1),(i,j-1),(i-1,j-1),(i-1,j),(i-1,j+1),(i,j+1)]

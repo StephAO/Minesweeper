@@ -52,24 +52,24 @@ def FC(b):
 
         uncovered_tiles = set(b.select(tile))
 
+        # get tiles to check constraints on
         check_tiles = set()
         check_tiles.update(uncovered_tiles)
         for ut in uncovered_tiles:
             check_tiles.update(b.get_adjacent(ut))
 
-
+        # check constraints
         while check_tiles:
             ct = check_tiles.pop()
-##            print(ct)
             safe, unsafe, knownp = b.check_constraint(ct)
-    ##            print(uncovered_tile, "SAFE: ", safe, " --> UNSAFE: ", unsafe)
             safe_tiles.update(safe)
             known_probabilities.update(knownp)
             unknown_probabilities.difference_update(knownp)
-##            print(unsafe)
+            # mark tiles that are believed to be mines
             for ust in unsafe:
                 if not ust.marked:
                     b.mark(ust)
+                    # check constraints for all tiles adjacent to new marking
                     check_tiles.update(b.get_adjacent(ust))
 
 ##        print("SAFE TILES", safe_tiles)
