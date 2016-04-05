@@ -30,6 +30,7 @@ class Board:
                 self.number_mines = number_mines
             self.mines = self.randomize_mines()
         else:
+            self.number_mines = len(mines)
             self.mines = mines
 
         # value of the board
@@ -47,7 +48,14 @@ class Board:
             for adj_tile in self.get_adjacent(tile):
                 adj_tile.increment()
 
-##        print(self.board)
+    def reset(self):
+        self.known_mines = 0
+        self.unknown_tiles = self.M*self.N
+        self.mines_hit = 0
+        for tile in self.get_all_tiles():
+            tile.known = False
+            tile.marked = False
+            tile.minep = 2
 
     def randomize_mines(self):
         ''' Generate random board '''
@@ -77,6 +85,9 @@ class Board:
             for j in range(self.M):
                 tiles.append(self.board[i][j])
         return tiles
+
+    def first_tile_to_pick(self):
+        return self.get_tile(0,0)
 
     def select(self,tile):
         ''' Select this tile revealing it's value (or mine if it is a mine)
@@ -124,8 +135,10 @@ class Board:
                     uncovered_tiles.extend(self.uncover_recurse(adj_tile))
         return uncovered_tiles
 
-    def check_constraint(self,tile):
-        '''
+    def check_simple_constraint(self,tile):
+        ''' Checks simple constraints (i.e. only comparing tile value to number
+            of known mines surrounding). For complex constraints see check complex constraints.
+
             Checks tile to see if see any information can be gained.
             Checks the value of the tile and compares it to the tile around it.
             If number of known mines in the adjacent tiles is equal to the value the tile is deemed safe
@@ -134,33 +147,30 @@ class Board:
             Returns the safe tiles, the unsafe tiles, and the tiles who's probability has been set
         '''
         if not tile.known:
-##            print("TILE NOT KNOWN")
             return [], [], []
         if tile.is_mine:
-##            print("TILE IS MINE")
             return [], [], []
         mines_remaining = tile.value
         number_unknown = 0
         for adj_tile in self.get_adjacent(tile):
             mines_remaining -= 1 if (adj_tile.known and adj_tile.is_mine) or adj_tile.marked else 0
-##            print(adj_tile.known)
             number_unknown += 0 if adj_tile.known or adj_tile.marked else 1
 
         if number_unknown == 0:
-##            print("All adjacent tiles known")
             return [], [], []
 
         safe = (mines_remaining == 0)
         unsafe = (mines_remaining == number_unknown)
         minep = mines_remaining/number_unknown
 
+        # return list
         safe_tiles = []
         unsafe_tiles = []
         prob_tiles = []
 
         for adj_tile in self.get_adjacent(tile):
             if not adj_tile.known and not adj_tile.marked:
-                if minep < adj_tile.minep:
+                if adj_tile.minep == 2 or minep > adj_tile.minep:
                     adj_tile.set_probability(minep)
                     prob_tiles.append(adj_tile)
                 if safe:
@@ -169,6 +179,125 @@ class Board:
                     unsafe_tiles.append(adj_tile)
 
         return safe_tiles, unsafe_tiles, prob_tiles
+
+    def check_complex_constraint(self, tile):
+        ''' Check complex constraints. These are any constraints beyond simple
+            constraints (see simple constraints). They work primarily on the
+            basis of groups of tiles with size > n, that required exactly, or
+            less than n. From this information, it is sometimes possible to
+            mark safe or unsafe tiles.
+
+            Returns safe tiles, unsafe tiles, and tiles whose minep has changed
+        '''
+        # check to see if legal
+        if not tile.known:
+            return [], [], []
+        if tile.is_mine:
+            return [], [], []
+
+        # constraints. List of lists. Inner lists are constraints
+        # first element of constraints is n, remainder of elements are the tiles
+        # the constraint is placed on
+        exactly_n = []
+        at_most_n = []
+
+        # info about this tile
+        adj_unknown = []
+        num_mines = 0
+
+        adj_tiles = self.get_adjacent(tile)
+        for adj_tile in adj_tiles:
+            if adj_tile.known:
+                if adj_tile.is_mine:
+                    num_mines += 1
+                else:
+                    adj2_unknown, adj2_rem_mines = self.get_remaining_info(adj_tile)
+                    if len(adj2_unknown) == 0:
+                        continue
+                    # n = adj2_rem_mines
+                    constraint = [adj2_rem_mines]
+                    unknowns_inside_adjacent = [u for u in adj2_unknown if (u in adj_tiles)]
+                    constraint.extend(unknowns_inside_adjacent)
+                    # all adj_unknowns are in tile adjacents
+                    if len(unknowns_inside_adjacent) == len(adj2_unknown):
+                        exactly_n.append(constraint)
+                    else:
+                        at_most_n.append(constraint)
+            else:
+                if adj_tile.marked:
+                    num_mines += 1
+                else:
+                    adj_unknown.append(adj_tile)
+
+        num_mines_rem = tile.value - num_mines
+        num_unknown = len(adj_unknown)
+        if num_unknown == 0:
+            return [],[],[]
+
+        # return list
+        safe_tiles = []
+        unsafe_tiles = []
+        prob_tiles = []
+
+
+##        safe = (mines_remaining == 0)
+##        unsafe = (mines_remaining == number_unknown)
+##        minep = mines_remaining/number_unknown
+##
+##
+##        for adj_tile in self.get_adjacent(tile):
+##            if not adj_tile.known and not adj_tile.marked:
+##                if minep < adj_tile.minep:
+##                    adj_tile.set_probability(minep)
+##                    prob_tiles.append(adj_tile)
+##                if safe:
+##                    safe_tiles.append(adj_tile)
+##                elif unsafe:
+##                    unsafe_tiles.append(adj_tile)
+
+        # apply constraints
+        for constraint in exactly_n:
+            n = constraint.pop(0)
+            other_unknowns = [at for at in adj_unknown if at not in constraint]
+            if len(other_unknowns) == 0:
+                continue
+##            print("e",num_mines_rem, n, other_unknowns)
+            minep = (num_mines_rem-n)/len(other_unknowns)
+            if num_mines_rem == n:
+                safe_tiles.extend(other_unknowns)
+            elif (num_mines_rem-n) == len(other_unknowns):
+                unsafe_tiles.extend(other_unknowns)
+            else:
+                for ou in other_unknowns:
+                    if ou.minep == 2 or minep > ou.minep:
+                        ou.set_probability(minep)
+                        prob_tiles.append(ou)
+
+        for constraint in at_most_n:
+            n = constraint.pop(0)
+            other_unknowns = [at for at in adj_unknown if at not in constraint]
+            if len(other_unknowns) == 0 or n > num_mines_rem:
+                continue
+##            print("am",num_mines_rem, n, other_unknowns)
+            if (num_mines_rem-n) == len(other_unknowns):
+                unsafe_tiles.extend(other_unknowns)
+
+        return safe_tiles, unsafe_tiles, prob_tiles
+
+    def get_remaining_info(self, tile):
+        if not tile.known:
+            print("CAN'T GET INFO ON UNKNOWN TILES")
+            return
+        if tile.is_mine:
+            print("CAN't GEt INFO FROM MINE TILE")
+        unknown = []
+        num_mines = 0
+        for adj_tile in self.get_adjacent(tile):
+            if (adj_tile.known and adj_tile.is_mine) or adj_tile.marked:
+                num_mines += 1
+            elif not adj_tile.known:
+                unknown.append(adj_tile)
+        return unknown, tile.value-num_mines
 
     def mark(self, tile):
         ''' Mark a tile as unsafe (i.e. we think it is a mine)'''
@@ -182,11 +311,13 @@ class Board:
         tile.marked = True
         tile.set_probability(1)
 
-    def solved(self):
-        ''' Checks to see if all unknown tiles are mines '''
-        return self.unknown_tiles == 0
+    # OLD VERSION
+##    def solved(self):
+##        ''' Checks to see if all unknown tiles are mines '''
+##        return self.unknown_tiles == 0
 
-    def check_sol(self):
+    # NEW VERSION
+    def solved(self):
         ''' checks to see if we are right '''
         for i in range(self.N):
             for j in range(self.M):
@@ -218,7 +349,8 @@ class Board:
             and j >= 0 and j < self.M
 
     def get_adjacent(self,tile):
-            ''' Returns a list of adjacent tiles. '''
+            ''' Returns a list of adjacent tiles.
+                order: starting bottom right going clockwise'''
             i = tile.i
             j = tile.j
             adj = [(i+1,j+1),(i+1,j),(i+1,j-1),(i,j-1),(i-1,j-1),(i-1,j),(i-1,j+1),(i,j+1)]
