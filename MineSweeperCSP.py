@@ -1,6 +1,7 @@
 import Board
 import Tile
 import sys
+import csv
 
 class MineSweeperCSP:
 
@@ -27,22 +28,39 @@ class MineSweeperCSP:
         print("-"*30)
         board.reset()
 
-    def run_all(self, board):
+    def run_all(self, board, mine_count, prob_succ):
+        mc = []
+        ps = []
         print("Running simpleFC")
         p = self.simpleFC(board)
-        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
-        print("-"*30)
+##        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
+##        print("-"*30)
+        mc.append(str(board.mines_hit))
+        ps.append(str(p))
+        board.reset()
+        print("Running complexFC")
+        p = self.complexFC(board)
+##        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
+##        print("-"*30)
+        mc.append(str(board.mines_hit))
+        ps.append(str(p))
         board.reset()
         print("Running simpleGAC")
         p = self.simpleGAC(board)
-        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
-        print("-"*30)
+##        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
+##        print("-"*30)
+        mc.append(str(board.mines_hit))
+        ps.append(str(p))
         board.reset()
         print("Running complexGAC")
         p = self.complexGAC(board)
-        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
-        print("-"*30)
+##        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
+##        print("-"*30
+        mc.append(str(board.mines_hit))
+        ps.append(str(p))
         board.reset()
+        mine_count.writerow(mc)
+        prob_succ.writerow(ps)
 
 
     def simpleFC(self, b):
@@ -164,7 +182,80 @@ class MineSweeperCSP:
         return probability_of_success
 
     def complexFC(self, b):
-        pass
+        probability_of_success = 1
+        safe_tiles = set()
+        known_probabilities = set()
+        unknown_probabilities = set(b.get_all_tiles())
+        first = True
+        while not b.solved():
+
+            tile = None
+            if first:
+                tile = b.first_tile_to_pick()
+                first = False
+            elif len(safe_tiles) > 0:
+##                print("picking a safe tile")
+                # if there's a safe tile, select that one next
+                tile = safe_tiles.pop()
+                if tile.known:
+                    continue
+            else:
+                # otherwise pick the tile with the lowest probability
+                base_probability = ((b.number_mines-b.known_mines)/b.unknown_tiles)
+                kp = sorted(known_probabilities, key = lambda tile: tile.minep)
+                if len(kp) + len(unknown_probabilities) == 0:
+                    print(b.unknown_tiles)
+                    print(b)
+                if len(kp) > 0 and (kp[0].minep < base_probability or len(unknown_probabilities)==0):
+                    tile = kp[0]
+                    known_probabilities.remove(tile)
+                    if tile.known:
+                        continue
+                    probability_of_success *= (1-tile.minep)
+##                    print("picking tile:",tile," with tilep:", 1-tile.minep)
+                else:
+                    tile = unknown_probabilities.pop()
+                    if tile.known:
+                        continue
+                    probability_of_success *= (1-base_probability)
+##                    print("picking tile:",tile," with basep:", 1-base_probability)
+
+            uncovered_tiles = set(b.select(tile))
+
+            # get tiles to check constraints on
+            check_tiles = set()
+            check_tiles.update(uncovered_tiles)
+            for ut in uncovered_tiles:
+                check_tiles.update(b.get_adjacent(ut))
+                safe_tiles.discard(ut)
+
+            # check constraints
+            while check_tiles:
+                ct = check_tiles.pop()
+                unsafe = set()
+                ssafe, sunsafe, sknownp = b.check_simple_constraint(ct)
+                csafe, cunsafe, cknownp = b.check_complex_constraint(ct)
+                safe_tiles.update(ssafe)
+                safe_tiles.update(csafe)
+                known_probabilities.update(sknownp)
+                known_probabilities.update(cknownp)
+                unknown_probabilities.difference_update(sknownp)
+                unknown_probabilities.difference_update(cknownp)
+                # mark tiles that are believed to be mines
+                unsafe.update(sunsafe)
+                unsafe.update(cunsafe)
+                for ust in unsafe:
+                    if not ust.marked:
+                        b.mark(ust)
+
+##            print(b.unknown_tiles)
+##            print(safe_tiles)
+##            print(b)
+##            if input("press Enter") == "q":
+##                break
+
+        return probability_of_success
+
 
     def complexGAC(self, b):
         probability_of_success = 1

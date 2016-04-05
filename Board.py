@@ -8,6 +8,8 @@ UNKNOWN = -1
 KNOWN = 0
 MARKED = 1
 
+STARTING_TILE = 2,3
+
 class Board:
 
     def __init__(self, N, M, number_mines = None, mines = None):
@@ -66,7 +68,7 @@ class Board:
         while i < self.number_mines:
             row_index = (row_index+random.randint(0,self.N))%self.N
             col_index = (col_index+random.randint(0,self.M))%self.M
-            if (row_index,col_index) not in added:
+            if (row_index,col_index) not in added and (row_index,col_index) != (STARTING_TILE):
                 added.append((row_index,col_index))
                 i += 1
         return added
@@ -87,7 +89,7 @@ class Board:
         return tiles
 
     def first_tile_to_pick(self):
-        return self.get_tile(0,0)
+        return self.get_tile(STARTING_TILE[0], STARTING_TILE[1])
 
     def select(self,tile):
         ''' Select this tile revealing it's value (or mine if it is a mine)
