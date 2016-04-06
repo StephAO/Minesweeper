@@ -1,66 +1,39 @@
 import Board
 import Tile
+import time
 import sys
 import csv
 
 class MineSweeperCSP:
 
-    def set_mode(self, fn_name):
-        if fn_name == "simpleFC":
-            self.fn = self.simpleFC
-        elif fn_name == "simpleGAC":
-            self.fn = self.simpleGAC
-        elif fn_name == "complexFC":
-            self.fn = self.complexFC
-        elif fn_name == "complexGAC":
-            self.fn = self.complexGAC
-        elif fn_name == "backtrack":
-            self.fn == self.backtrack
-        elif fn_name == "human":
-            self.fn = self.human
-        else:
-            print("INVALID CSP")
-            sys.exit()
+    def __init__(self):
+        self.CSP_functions = [self.simpleFC,self.simpleGAC,self.complexFC,self.complexGAC]
 
-    def run(self, board):
-        p = self.fn(board)
-        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
-        print("-"*30)
+    def run(self, fn, board, verbose = False):
+        stime = time.clock()
+        p = fn(board)
+        time_taken = time.clock() - stime
+        if verbose:
+            print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
+            print("-"*30)
+        num_mines = board.mines_hit
         board.reset()
+        return p*100, num_mines, time_taken
 
-    def run_all(self, board, mine_count, prob_succ):
+    def run_all(self, board, mine_count, prob_succ, time_taken):
         mc = []
         ps = []
-        print("Running simpleFC")
-        p = self.simpleFC(board)
-##        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
-##        print("-"*30)
-        mc.append(str(board.mines_hit))
-        ps.append(str(p))
-        board.reset()
-        print("Running complexFC")
-        p = self.complexFC(board)
-##        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
-##        print("-"*30)
-        mc.append(str(board.mines_hit))
-        ps.append(str(p))
-        board.reset()
-        print("Running simpleGAC")
-        p = self.simpleGAC(board)
-##        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
-##        print("-"*30)
-        mc.append(str(board.mines_hit))
-        ps.append(str(p))
-        board.reset()
-        print("Running complexGAC")
-        p = self.complexGAC(board)
-##        print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
-##        print("-"*30
-        mc.append(str(board.mines_hit))
-        ps.append(str(p))
-        board.reset()
+        tt = []
+
+        for fn in self.CSP_functions:
+            p, m, t = self.run(fn, board)
+            ps.append(str(p))
+            mc.append(str(m))
+            tt.append(str(t))
+
         mine_count.writerow(mc)
         prob_succ.writerow(ps)
+        time_taken.writerow(tt)
 
 
     def simpleFC(self, b):

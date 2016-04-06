@@ -8,7 +8,7 @@ UNKNOWN = -1
 KNOWN = 0
 MARKED = 1
 
-STARTING_TILE = 2,3
+STARTING_TILE = 0,0
 
 class Board:
 
@@ -22,6 +22,7 @@ class Board:
 
         self.N = N
         self.M = M
+        STARTING_TILE = (int(N/2), int(M/2))
         self.known_mines = 0
         self.unknown_tiles = M*N
         self.mines_hit = 0

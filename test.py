@@ -4,74 +4,59 @@ import sys
 import csv
 
 NUMBER_OF_TEST = 1000
+BOARD_SIZES = {
+    "beginner" : (9,9,10),
+    "intermediate" : (16,16,40),
+    "expert" : (16,30,99),
+    "custom" : (50,50,500)
+}
 
 def add(a):
     a.append(5)
 
 def main():
-    mode = "complexGAC"
-    if len(sys.argv) == 2:
+    mode = "full_test"
+    if len(sys.argv) >= 2:
         mode = sys.argv[1]
 
-    # Beginner
-    mine_count = open('mineDataBeginner.csv', 'w', newline='')
-    prob_succ = open('probDataBeginner.csv', 'w', newline='')
-    mc_writer = csv.writer(mine_count, quoting=csv.QUOTE_MINIMAL)
-    ps_writer = csv.writer(prob_succ,  quoting=csv.QUOTE_MINIMAL)
-    for i in range(NUMBER_OF_TEST):
+    if mode == "human":
+        play = MineSweeperCSP.MineSweeperCSP()
+        bs = BOARD_SIZES["expert"]
+        if len(sys.argv) >= 3 and sys.argv[2] in BOARD_SIZES:
+            bs = BOARD_SIZES[argv[2]]
+        board = Board.Board(bs[0], bs[1], bs[2])
+        play.run(play.human, board)
 
-        b = Board.Board(9,9,10)
-        solve = MineSweeperCSP.MineSweeperCSP()
-        solve.set_mode(mode)
-        solve.run_all(b,mc_writer, ps_writer)
+    elif mode == "single_test":
+        pass
 
-    mine_count.close()
-    prob_succ.close()
+    elif mode == "full_test":
+        test()
 
-    # Intermediate
-    mine_count = open('mineDataIntermediate.csv', 'w', newline='')
-    prob_succ = open('probDataIntermediate.csv', 'w', newline='')
-    mc_writer = csv.writer(mine_count, quoting=csv.QUOTE_MINIMAL)
-    ps_writer = csv.writer(prob_succ,  quoting=csv.QUOTE_MINIMAL)
-    for i in range(NUMBER_OF_TEST):
+def test():
+    for difficulty, board_size in BOARD_SIZES.items():
+        print(difficulty)
+        mine_count = open("mines_hit_"+difficulty+".csv", 'w', newline='')
+        prob_succ = open("probability_success_"+difficulty+".csv", 'w', newline='')
+        time_taken = open("time_taken_"+difficulty+".csv", 'w', newline='')
+        mc_writer = csv.writer(mine_count, quoting=csv.QUOTE_MINIMAL)
+        ps_writer = csv.writer(prob_succ,  quoting=csv.QUOTE_MINIMAL)
+        tt_writer = csv.writer(time_taken,  quoting=csv.QUOTE_MINIMAL)
 
-        b = Board.Board(16,16,40)
-        solve = MineSweeperCSP.MineSweeperCSP()
-        solve.set_mode(mode)
-        solve.run_all(b,mc_writer, ps_writer)
+        mc_writer.writerow(["simpleFC","simpleGAC","complexFC","complexGAC"])
+        ps_writer.writerow(["simpleFC","simpleGAC","complexFC","complexGAC"])
+        tt_writer.writerow(["simpleFC","simpleGAC","complexFC","complexGAC"])
 
-    mine_count.close()
-    prob_succ.close()
+        for i in range(NUMBER_OF_TEST):
+            if (i%100 == 0):
+                print(i)
+            b = Board.Board(board_size[0], board_size[1], board_size[2])
+            solve = MineSweeperCSP.MineSweeperCSP()
+            solve.run_all(b,mc_writer, ps_writer, tt_writer)
 
-    # Expert
-    mine_count = open('mineDataExpert.csv', 'w', newline='')
-    prob_succ = open('probDataExper.csv', 'w', newline='')
-    mc_writer = csv.writer(mine_count, quoting=csv.QUOTE_MINIMAL)
-    ps_writer = csv.writer(prob_succ,  quoting=csv.QUOTE_MINIMAL)
-    for i in range(NUMBER_OF_TEST):
-
-        b = Board.Board(16,30,99)
-        solve = MineSweeperCSP.MineSweeperCSP()
-        solve.set_mode(mode)
-        solve.run_all(b,mc_writer, ps_writer)
-
-    mine_count.close()
-    prob_succ.close()
-
-    # Custom
-    mine_count = open('mineDataCustom.csv', 'w', newline='')
-    prob_succ = open('probDataCustom.csv', 'w', newline='')
-    mc_writer = csv.writer(mine_count, quoting=csv.QUOTE_MINIMAL)
-    ps_writer = csv.writer(prob_succ,  quoting=csv.QUOTE_MINIMAL)
-    for i in range(NUMBER_OF_TEST):
-
-        b = Board.Board(50,50,500)
-        solve = MineSweeperCSP.MineSweeperCSP()
-        solve.set_mode(mode)
-        solve.run_all(b,mc_writer, ps_writer)
-
-    mine_count.close()
-    prob_succ.close()
+        mine_count.close()
+        prob_succ.close()
+        time_taken.close()
 
 if __name__ == '__main__':
     main()
