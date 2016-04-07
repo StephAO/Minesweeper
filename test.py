@@ -15,12 +15,12 @@ def add(a):
     a.append(5)
 
 def main():
-    mode = "full_test"
+    mode = "human"
     if len(sys.argv) >= 2:
         mode = sys.argv[1]
 
     if mode == "human":
-        
+
         row = input("Enter a row size: ")
         column = input("Enter a column size: ")
         while True:
@@ -31,10 +31,10 @@ def main():
             num_mines = input("How many mines?: ")
             if int(num_mines) > (int(row) * int(column)):
                 num_mines = (int(row) * int(column))
-            board = Board.Board(int(column), int(row), int(num_mines)) 
+            board = Board.Board(int(column), int(row), int(num_mines))
         if mines == "n":
             board = Board.Board(int(column), int(row))
-        
+
         play = MineSweeperCSP.MineSweeperCSP()
         """
         bs = BOARD_SIZES["expert"]
@@ -42,7 +42,7 @@ def main():
             bs = BOARD_SIZES[argv[2]]
         board = Board.Board(bs[0], bs[1], bs[2])
         """
-        play.run(play.human(board), board)
+        play.run(play.human, board)
 
     elif mode == "single_test":
         pass

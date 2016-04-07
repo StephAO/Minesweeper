@@ -341,4 +341,5 @@ class MineSweeperCSP:
 
         if status == 1:
             print("CONGRATULATIONS")
+        return 1
 
