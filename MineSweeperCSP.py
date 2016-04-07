@@ -323,7 +323,7 @@ class MineSweeperCSP:
                     break
             if q:
                 break
-            print(loc)
+            print("You have uncovered the tile at position (" + str(loc) + ")")
             loc = loc.split(',')
             tile = b.get_tile(int(loc[0]), int(loc[1]))
             if len(loc) > 2:
@@ -341,4 +341,5 @@ class MineSweeperCSP:
 
         if status == 1:
             print("CONGRATULATIONS")
+        return 1
 
