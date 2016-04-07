@@ -48,8 +48,8 @@ def test():
         tt_writer.writerow(["simpleFC","simpleGAC","complexFC","complexGAC"])
 
         for i in range(NUMBER_OF_TEST):
-            if (i%100 == 0):
-                print(i)
+            if ((i+1)%int(NUMBER_OF_TEST/10) == 0):
+                print(str(((i+1)/int(NUMBER_OF_TEST/10))*100)+"%")
             b = Board.Board(board_size[0], board_size[1], board_size[2])
             solve = MineSweeperCSP.MineSweeperCSP()
             solve.run_all(b,mc_writer, ps_writer, tt_writer)
