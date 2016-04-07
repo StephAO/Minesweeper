@@ -42,7 +42,7 @@ def main():
             bs = BOARD_SIZES[argv[2]]
         board = Board.Board(bs[0], bs[1], bs[2])
         """
-        play.run(play.human(board), board)
+        play.run(play.human, board)
 
     elif mode == "single_test":
         pass
