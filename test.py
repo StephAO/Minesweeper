@@ -6,9 +6,9 @@ import csv
 NUMBER_OF_TEST = 1000
 BOARD_SIZES = {
     "beginner" : (9,9,10),
-    "intermediate" : (16,16,40),
-    "expert" : (16,30,99),
-    "custom" : (50,50,500)
+    #"intermediate" : (16,16,40),
+    #"expert" : (16,30,99),
+    #"custom" : (50,50,500)
 }
 
 def add(a):
@@ -20,12 +20,29 @@ def main():
         mode = sys.argv[1]
 
     if mode == "human":
+        
+        row = input("Enter a row size: ")
+        column = input("Enter a column size: ")
+        while True:
+            mines = input("Do you want the assign the number of mines? (y, n): ")
+            if mines == 'n' or mines == 'y':
+                break
+        if mines == "y":
+            num_mines = input("How many mines?: ")
+            if int(num_mines) > (int(row) * int(column)):
+                num_mines = (int(row) * int(column))
+            board = Board.Board(int(column), int(row), int(num_mines)) 
+        if mines == "n":
+            board = Board.Board(int(column), int(row))
+        
         play = MineSweeperCSP.MineSweeperCSP()
+        """
         bs = BOARD_SIZES["expert"]
         if len(sys.argv) >= 3 and sys.argv[2] in BOARD_SIZES:
             bs = BOARD_SIZES[argv[2]]
         board = Board.Board(bs[0], bs[1], bs[2])
-        play.run(play.human, board)
+        """
+        play.run(play.human(board), board)
 
     elif mode == "single_test":
         pass
@@ -59,4 +76,5 @@ def test():
         time_taken.close()
 
 if __name__ == '__main__':
+
     main()
