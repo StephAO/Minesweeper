@@ -41,11 +41,11 @@ class MineSweeperCSP:
         known_probabilities = set()
         unknown_probabilities = set(b.get_all_tiles())
         first = True
-        max_adjacent = 0
         all_tiles = b.get_all_tiles()
         
         while not b.solved():
-
+            
+            max_adjacent = 0
             tile = None
             if first:
                 tile = b.first_tile_to_pick()
