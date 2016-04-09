@@ -35,6 +35,103 @@ class MineSweeperCSP:
         prob_succ.writerow(ps)
         time_taken.writerow(tt)
 
+    def Heuristics(self, b):
+        probability_of_success = 1
+        safe_tiles = set()
+        known_probabilities = set()
+        unknown_probabilities = set(b.get_all_tiles())
+        first = True
+        max_adjacent = 0
+        all_tiles = b.get_all_tiles()
+        
+        while not b.solved():
+
+            tile = None
+            if first:
+                tile = b.first_tile_to_pick()
+                first = False
+            elif len(safe_tiles) > 0:
+                # if there's a safe tile, select that one next    
+                #find the max number of adjacent tiles
+                for t in safe_tiles:
+                    count = 0
+                    for tiles in b.get_adjacent(t):
+                        if tiles.known or tiles.is_mine or tiles.marked:
+                            count += 1
+                    if count >= max_adjacent:
+                        max_adjacent = count                
+                #find the first tile that matches the max number
+                for t in safe_tiles:
+                    count = 0
+                    for tiles in b.get_adjacent(t):
+                        if tiles.known or tiles.is_mine or tiles.marked:
+                            count += 1
+                    if count == max_adjacent:
+                        tile = safe_tiles.pop()
+                        if tile.known:
+                            continue
+                        break
+            else:
+                # otherwise pick the tile with the most known adjacent tiles
+                #find the max number of adjacent tiles
+                for t in all_tiles:
+                    count = 0
+                    current_adj = b.get_adjacent(t)
+                    for tile in current_adj:
+                        if tile.known or tile.is_mine or tile.marked:
+                            count += 1
+                    if count >= max_adjacent:
+                        max_adjacent = count    
+                #find the first tile that matches the max number        
+                for t in all_tiles:
+                    count = 0
+                    for tiles in b.get_adjacent(t):
+                        if tiles.known or tiles.is_mine or tiles.marked:
+                            count += 1
+                    if count == max_adjacent:
+                        tile = t
+                        if tile.known:
+                            continue
+                        break              
+                #calculate the probability of success    
+                base_probability = ((b.number_mines-b.known_mines)/b.unknown_tiles)
+                kp = sorted(known_probabilities, key = lambda tile: tile.minep)
+                if len(kp) + len(unknown_probabilities) == 0:
+                    print(b.unknown_tiles)
+                    print(b)
+                if len(kp) > 0 and (tile.minep < base_probability or len(unknown_probabilities)==0):
+                    known_probabilities.remove(tile)
+                    if tile.known:
+                        continue
+                    probability_of_success *= (1-tile.minep)
+                else:
+                    unknown_probabilities.remove(tile)
+                    if tile.known:
+                        continue
+                    probability_of_success *= (1-base_probability)
+
+            uncovered_tiles = set(b.select(tile))
+            
+            # get tiles to check constraints on
+            check_tiles = set()
+            check_tiles.update(uncovered_tiles)
+            for ut in uncovered_tiles:
+                check_tiles.update(b.get_adjacent(ut))
+
+            # check constraints
+            while check_tiles:
+                ct = check_tiles.pop()
+                safe, unsafe, knownp = b.check_simple_constraint(ct)
+                safe_tiles.update(safe)
+                known_probabilities.update(knownp)
+                unknown_probabilities.difference_update(knownp)
+                # mark tiles that are believed to be mines
+                for ust in unsafe:
+                    if not ust.marked:
+                        b.mark(ust)
+
+        return probability_of_success
+
 
     def simpleFC(self, b):
         probability_of_success = 1
