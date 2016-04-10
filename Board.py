@@ -243,29 +243,12 @@ class Board:
         unsafe_tiles = []
         prob_tiles = []
 
-
-##        safe = (mines_remaining == 0)
-##        unsafe = (mines_remaining == number_unknown)
-##        minep = mines_remaining/number_unknown
-##
-##
-##        for adj_tile in self.get_adjacent(tile):
-##            if not adj_tile.known and not adj_tile.marked:
-##                if minep < adj_tile.minep:
-##                    adj_tile.set_probability(minep)
-##                    prob_tiles.append(adj_tile)
-##                if safe:
-##                    safe_tiles.append(adj_tile)
-##                elif unsafe:
-##                    unsafe_tiles.append(adj_tile)
-
         # apply constraints
         for constraint in exactly_n:
             n = constraint.pop(0)
             other_unknowns = [at for at in adj_unknown if at not in constraint]
             if len(other_unknowns) == 0:
                 continue
-##            print("e",num_mines_rem, n, other_unknowns)
             minep = (num_mines_rem-n)/len(other_unknowns)
             if num_mines_rem == n:
                 safe_tiles.extend(other_unknowns)
@@ -282,13 +265,13 @@ class Board:
             other_unknowns = [at for at in adj_unknown if at not in constraint]
             if len(other_unknowns) == 0 or n > num_mines_rem:
                 continue
-##            print("am",num_mines_rem, n, other_unknowns)
             if (num_mines_rem-n) == len(other_unknowns):
                 unsafe_tiles.extend(other_unknowns)
 
         return safe_tiles, unsafe_tiles, prob_tiles
 
     def get_remaining_info(self, tile):
+        ''' Helper function'''
         if not tile.known:
             print("CAN'T GET INFO ON UNKNOWN TILES")
             return
@@ -315,14 +298,9 @@ class Board:
         tile.marked = True
         tile.set_probability(1)
 
-    # OLD VERSION
-##    def solved(self):
-##        ''' Checks to see if all unknown tiles are mines '''
-##        return self.unknown_tiles == 0
-
     # NEW VERSION
     def solved(self):
-        ''' checks to see if we are right '''
+        ''' checks to see if we have solved the board '''
         for i in range(self.N):
             for j in range(self.M):
                 if not self.board[i][j].is_mine and not self.board[i][j].known:

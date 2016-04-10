@@ -7,15 +7,14 @@ import csv
 class MineSweeperCSP:
 
     def __init__(self):
-        self.CSP_functions = [self.complexGAC, self.complexGAC_max_c]
+        self.CSP_functions = [self.simpleFC, self.simpleGAC, self.complexFC, self.complexGAC, self.complexGAC_max_c]
 
-    def run(self, fn, board, verbose = False):
+    def run(self, fn, board, show=False):
         stime = time.clock()
-        p = fn(board)
+        p = fn(board, show=show)
         time_taken = time.clock() - stime
-        if verbose:
+        if show:
             print("Probability of success =",str(p*100)+"%","\nMines hit",board.mines_hit,"/",board.number_mines)
-            print("-"*30)
         num_mines = board.mines_hit
         board.reset()
         return p*100, num_mines, time_taken
@@ -35,7 +34,7 @@ class MineSweeperCSP:
         prob_succ.writerow(ps)
         time_taken.writerow(tt)
 
-    def simpleFC(self, b):
+    def simpleFC(self, b, show):
         probability_of_success = 1
         safe_tiles = set()
         known_probabilities = set()
@@ -91,9 +90,14 @@ class MineSweeperCSP:
                     if not ust.marked:
                         b.mark(ust)
 
+            if show:
+                print(b)
+                if (input('press enter to see next move, or q to quit') == 'q'):
+                    break
+
         return probability_of_success
 
-    def simpleGAC(self, b):
+    def simpleGAC(self, b, show):
         probability_of_success = 1
         safe_tiles = set()
         known_probabilities = set()
@@ -151,9 +155,14 @@ class MineSweeperCSP:
                         # check constraints for all tiles adjacent to new marking
                         check_tiles.update(b.get_adjacent(ust))
 
+            if show:
+                print(b)
+                if (input('press enter to see next move, or q to quit') == 'q'):
+                    break
+
         return probability_of_success
 
-    def complexFC(self, b):
+    def complexFC(self, b, show):
         probability_of_success = 1
         safe_tiles = set()
         known_probabilities = set()
@@ -218,10 +227,15 @@ class MineSweeperCSP:
                     if not ust.marked:
                         b.mark(ust)
 
+            if show:
+                print(b)
+                if (input('press enter to see next move, or q to quit') == 'q'):
+                    break
+
         return probability_of_success
 
 
-    def complexGAC(self, b):
+    def complexGAC(self, b, show):
         probability_of_success = 1
         safe_tiles = set()
         known_probabilities = set()
@@ -285,9 +299,14 @@ class MineSweeperCSP:
                         # check constraints for all tiles adjacent to new marking
                         check_tiles.update(b.get_adjacent(ust))
 
+            if show:
+                print(b)
+                if (input('press enter to see next move, or q to quit') == 'q'):
+                    break
+
         return probability_of_success
 
-    def complexGAC_max_c(self, b):
+    def complexGAC_max_c(self, b, show):
         ''' same as complexGAC, except heuristic for guessing next tiles (in
             case there's no safe tiles) is maximizing constraints that will be
             checked instead of probability'''
@@ -356,18 +375,20 @@ class MineSweeperCSP:
                         # check constraints for all tiles adjacent to new marking
                         check_tiles.update(b.get_adjacent(ust))
 
+            if show:
+                print(b)
+                if (input('press enter to see next move, or q to quit') == 'q'):
+                    break
+
         return probability_of_success
 
-    def backtrack(self, b):
-        pass
-
-    def human(self, b):
+    def human(self, b, show):
         status = 1
         while not b.solved():
             loc = []
             q = False
             while len(loc) < 2:
-                loc = input("Please enter a 0-indexed location. (row,col): ")
+                loc = input("Please enter a 0-indexed location or q to quit. (row,col): ")
                 if loc[0].lower() == 'q' or loc[0].lower() == 'quit':
                     q = True
                     print("QUITTING GAME")
@@ -387,7 +408,6 @@ class MineSweeperCSP:
                     status = -1
                     print("GAME OVER")
                     break
-
 
             print(b)
 
