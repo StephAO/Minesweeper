@@ -3,12 +3,12 @@ import Board
 import sys
 import csv
 
-NUMBER_OF_TEST = 1000
+NUMBER_OF_TEST = 2
 BOARD_SIZES = {
     "beginner" : (9,9,10),
-    #"intermediate" : (16,16,40),
-    #"expert" : (16,30,99),
-    #"custom" : (50,50,500)
+    "intermediate" : (16,16,40),
+    "expert" : (16,30,99),
+    "custom" : (50,50,500)
 }
 
 def add(a):
@@ -39,10 +39,26 @@ def main():
         play.run(play.human, board)
 
     elif mode == "single_test":
+        ''' run single test, change settings in code
+            To see the moves taken by the algorithm add the following lines
+            add the bottom of the for loop in any of the algorithms in MineSweeperCSP:
+
+            # don't add this (just to see format)
+            while not b.solved():
+                .
+                .
+                .
+            # add this
+                print(b)
+                if (input('press enter to see next more, or q to quit') == 'q'):
+                    break
+        '''
         solve = MineSweeperCSP.MineSweeperCSP()
-        solve.run(solve.complexGAC_max_cp, Board.Board(9,9,10))
+        solve.run(solve.complexGAC, Board.Board(9,9,10))
 
     elif mode == "full_test":
+        ''' Will test every function defined in the list created on
+            MineSweeperCSP constructor'''
         test()
 
 def test():
@@ -55,13 +71,13 @@ def test():
         ps_writer = csv.writer(prob_succ,  quoting=csv.QUOTE_MINIMAL)
         tt_writer = csv.writer(time_taken,  quoting=csv.QUOTE_MINIMAL)
 
-        mc_writer.writerow(["complexGAC", "complexGAC_max_c", "complexGAC_max_cp"])
-        ps_writer.writerow(["complexGAC", "complexGAC_max_c", "complexGAC_max_cp"])
-        tt_writer.writerow(["complexGAC", "complexGAC_max_c", "complexGAC_max_cp"])
+        mc_writer.writerow(["minize_probability", "maximize_constraints"])
+        ps_writer.writerow(["minize_probability", "maximize_constraints"])
+        tt_writer.writerow(["minize_probability", "maximize_constraints"])
 
         for i in range(NUMBER_OF_TEST):
-            if ((i+1)%int(NUMBER_OF_TEST/10) == 0):
-                print(str(((i+1)/int(NUMBER_OF_TEST/10))*10)+"%")
+##            if ((i+1)%int(NUMBER_OF_TEST/10) == 0):
+##                print(str(((i+1)/int(NUMBER_OF_TEST/10))*10)+"%")
             b = Board.Board(board_size[0], board_size[1], board_size[2])
             solve = MineSweeperCSP.MineSweeperCSP()
             solve.run_all(b,mc_writer, ps_writer, tt_writer)

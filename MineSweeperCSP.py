@@ -7,7 +7,7 @@ import csv
 class MineSweeperCSP:
 
     def __init__(self):
-        self.CSP_functions = [self.complexGAC, self.complexGAC_max_c, self.complexGAC_max_cp]
+        self.CSP_functions = [self.complexGAC, self.complexGAC_max_c]
 
     def run(self, fn, board, verbose = False):
         stime = time.clock()
@@ -184,13 +184,11 @@ class MineSweeperCSP:
                     if tile.known:
                         continue
                     probability_of_success *= (1-tile.minep)
-##                    print("picking tile:",tile," with tilep:", 1-tile.minep)
                 else:
                     tile = unknown_probabilities.pop()
                     if tile.known:
                         continue
                     probability_of_success *= (1-base_probability)
-##                    print("picking tile:",tile," with basep:", 1-base_probability)
 
             uncovered_tiles = set(b.select(tile))
 
@@ -219,12 +217,6 @@ class MineSweeperCSP:
                 for ust in unsafe:
                     if not ust.marked:
                         b.mark(ust)
-
-##            print(b.unknown_tiles)
-##            print(safe_tiles)
-##            print(b)
-##            if input("press Enter") == "q":
-##                break
 
         return probability_of_success
 
@@ -257,13 +249,11 @@ class MineSweeperCSP:
                     if tile.known:
                         continue
                     probability_of_success *= (1-tile.minep)
-##                    print("picking tile:",tile," with tilep:", 1-tile.minep)
                 else:
                     tile = unknown_probabilities.pop()
                     if tile.known:
                         continue
                     probability_of_success *= (1-base_probability)
-##                    print("picking tile:",tile," with basep:", 1-base_probability)
 
             uncovered_tiles = set(b.select(tile))
 
@@ -294,11 +284,6 @@ class MineSweeperCSP:
                         b.mark(ust)
                         # check constraints for all tiles adjacent to new marking
                         check_tiles.update(b.get_adjacent(ust))
-##            print(b.unknown_tiles)
-##            print(safe_tiles)
-##            print(b)
-##            if input("press Enter") == "q":
-##                break
 
         return probability_of_success
 
@@ -370,92 +355,6 @@ class MineSweeperCSP:
                         b.mark(ust)
                         # check constraints for all tiles adjacent to new marking
                         check_tiles.update(b.get_adjacent(ust))
-
-        return probability_of_success
-
-    def complexGAC_max_cp(self, b):
-        ''' same as complexGAC, except heuristic for guessing next tiles (in
-            case there's no safe tiles) is a mix of maximizing contraints
-            and probability'''
-        probability_of_success = 1
-        safe_tiles = set()
-        known_probabilities = set()
-        unknown_probabilities = set(b.get_all_tiles())
-        first = True
-        all_tiles = b.get_all_tiles()
-
-        while not b.solved():
-
-            max_adjacent = 0
-            tile = None
-            if first:
-                tile = b.first_tile_to_pick()
-                first = False
-            elif len(safe_tiles) > 0:
-                # if there's a safe tile, select that one next
-                tile = safe_tiles.pop()
-                if tile.known:
-                    continue
-            else:
-                # otherwise pick the tile with the most known adjacent tiles
-                # find the max number of adjacent tiles
-
-                base_probability = ((b.number_mines-b.known_mines)/b.unknown_tiles)
-                kp = sorted(known_probabilities, key = lambda tile: tile.minep)
-                count = 0
-                for t in kp:
-                    if t.minep > base_probability:
-                        break
-                    count += 1
-
-                if count == 0:
-                    tile = unknown_probabilities.pop()
-                    if tile.known or tile.marked:
-                        continue
-                    probability_of_success *= (1-base_probability)
-
-                else:
-                    for t in kp[:count]:
-                        if t.known or t.marked:
-                            continue
-                        count = 0
-                        current_adj = b.get_adjacent(t)
-                        for adj_tile in current_adj:
-                            if adj_tile.known and not adj_tile.is_mine:
-                                count += 1
-                        if count >= max_adjacent:
-                            max_adjacent = count
-                            tile = t
-
-                    #calculate the probability of success
-                    probability_of_success *= (1-tile.minep)
-
-            uncovered_tiles = set(b.select(tile))
-
-            # get tiles to check constraints on
-            check_tiles = set()
-            check_tiles.update(uncovered_tiles)
-            for ut in uncovered_tiles:
-                check_tiles.update(b.get_adjacent(ut))
-
-           # check constraints
-            while check_tiles:
-                ct = check_tiles.pop()
-                unsafe = set()
-                ssafe, sunsafe, sknownp = b.check_simple_constraint(ct)
-                csafe, cunsafe, cknownp = b.check_complex_constraint(ct)
-                safe_tiles.update(ssafe)
-                safe_tiles.update(csafe)
-                # mark tiles that are believed to be mines
-                unsafe.update(sunsafe)
-                unsafe.update(cunsafe)
-                for ust in unsafe:
-                    if not ust.marked:
-                        b.mark(ust)
-                        # check constraints for all tiles adjacent to new marking
-                        check_tiles.update(b.get_adjacent(ust))
-##            print(b)
-##            input()
 
         return probability_of_success
 

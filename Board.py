@@ -50,6 +50,9 @@ class Board:
                 adj_tile.increment()
 
     def reset(self):
+        ''' reset board so that it's the exact same as it was right after
+            initialization
+        '''
         self.known_mines = 0
         self.unknown_tiles = self.M*self.N
         self.mines_hit = 0
