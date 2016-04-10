@@ -1,7 +1,8 @@
 # Minesweeper
 
+Run test.py, all other files are supporting.
 There are 3 modes, "human", "single_test", "full_test". Default is single_test.
-To run in desired mode enter it as the first parameter when calling it,
+To run in desired mode enter it as the first parameter when calling test.py,
 or change source code (first line of main).
 
 human:
